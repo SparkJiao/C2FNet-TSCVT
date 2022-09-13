@@ -9,13 +9,13 @@ class EvalDataset(data.Dataset):
         label_dirs = os.listdir(label_root)
 
         dir_name_list = []
-        for idir in pred_dirs:
-            if idir in label_dirs:
-                pred_names = os.listdir(os.path.join(pred_root, idir))
-                label_names = os.listdir(os.path.join(label_root, idir))
-                for iname in pred_names:
-                    if iname in label_names:
-                        dir_name_list.append(os.path.join(idir, iname))
+        # for idir in pred_dirs:
+        #     if idir in label_dirs:
+        pred_names = os.listdir(pred_root)
+        label_names = os.listdir(label_root)
+        for iname in pred_names:
+            if iname in label_names:
+                dir_name_list.append(iname)
 
         self.image_path = list(
             map(lambda x: os.path.join(pred_root, x), dir_name_list))
