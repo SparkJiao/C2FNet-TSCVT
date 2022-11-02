@@ -17,6 +17,8 @@ import torchvision.models as models
 from utils.tensor_ops import cus_sample, upsample_add
 from thop import clever_format
 from thop import profile
+
+
 class BasicConv2d(nn.Module):
     def __init__(self, in_planes, out_planes, kernel_size, stride=1, padding=0, dilation=1, relu=False, bn=True):
         super(BasicConv2d, self).__init__()
@@ -33,6 +35,8 @@ class BasicConv2d(nn.Module):
         if self.relu is not None:
             x = self.relu(x)
         return x
+
+
 class RFB_modified(nn.Module):
     def __init__(self, in_channel, out_channel):
         super(RFB_modified, self).__init__()
@@ -70,20 +74,22 @@ class RFB_modified(nn.Module):
 
         x = self.relu(x_cat + self.conv_res(x))
         return x
+
+
 class MSCA(nn.Module):
     def __init__(self, channels=32, r=2):
         super(MSCA, self).__init__()
-        out_channels = int(channels//r)
-        #local_att
-        self.local_att =nn.Sequential(
-            nn.Conv2d(channels, out_channels, kernel_size=1, stride=1, padding= 0, bias=False),
+        out_channels = int(channels // r)
+        # local_att
+        self.local_att = nn.Sequential(
+            nn.Conv2d(channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True),
             nn.Conv2d(out_channels, channels, kernel_size=1, stride=1, padding=0, bias=False),
-        nn.BatchNorm2d(channels)
+            nn.BatchNorm2d(channels)
         )
 
-        #global_att
+        # global_att
         self.global_att = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False),
@@ -102,6 +108,8 @@ class MSCA(nn.Module):
         wei = self.sig(xlg)
 
         return wei
+
+
 class ACFM(nn.Module):
     def __init__(self, channel=32):
         super(ACFM, self).__init__()
@@ -120,6 +128,8 @@ class ACFM(nn.Module):
         xo = self.conv(xo)
 
         return xo
+
+
 class DGCM(nn.Module):
     def __init__(self, channel=32):
         super(DGCM, self).__init__()
@@ -145,8 +155,10 @@ class DGCM(nn.Module):
         out = self.conv(out)
 
         return out
+
+
 class MBR(nn.Module):
-    expansion =1
+    expansion = 1
 
     def __init__(self, inplanes, planes, stride=1, upsample=None, **kwargs):
         super(MBR, self).__init__()
@@ -208,9 +220,11 @@ class MBR(nn.Module):
         out = self.relu(out)
 
         return out
+
+
 class Refine(nn.Module):
     def __init__(self):
-        super(Refine,self).__init__()
+        super(Refine, self).__init__()
         self.upsample = cus_sample
 
     def forward(self, attention, x1, x2, x3):
@@ -219,6 +233,8 @@ class Refine(nn.Module):
         x3 = x3 + torch.mul(x3, attention)
 
         return x1, x2, x3
+
+
 class C2FNet(nn.Module):
     def __init__(self, channel=32):
         super(C2FNet, self).__init__()
@@ -226,14 +242,14 @@ class C2FNet(nn.Module):
         # ---- ResNet Backbone ----
         self.resnet = res2net50_v1b_26w_4s(pretrained=True)
 
-        #Decoder 1
+        # Decoder 1
         self.rfb0_1 = RFB_modified(64, channel)
         self.rfb1_1 = RFB_modified(256, channel)
         self.rfb2_1 = RFB_modified(512, channel)
         self.rfb3_1 = RFB_modified(1024, channel)
         self.rfb4_1 = RFB_modified(2048, channel)
 
-        #Decoder 2
+        # Decoder 2
         self.rfb0_2 = RFB_modified(64, channel)
         self.rfb1_2 = RFB_modified(256, channel)
         self.rfb2_2 = RFB_modified(512, channel)
@@ -270,6 +286,7 @@ class C2FNet(nn.Module):
         self.inplanes = 16
         self.deconv1 = self._make_CIM(MBR, 16, 3, stride=2)
         self.deconv2 = self._make_CIM(MBR, 16, 3, stride=2)
+
     def forward(self, x):
         x = self.resnet.conv1(x)
         x = self.resnet.bn1(x)
@@ -341,29 +358,26 @@ class C2FNet(nn.Module):
         self.inplanes = planes
 
         return nn.Sequential(*layers)
+
+
 if __name__ == '__main__':
     torch.cuda.set_device(0)
     ras = C2FNet().cuda()
     input_tensor = torch.randn(2, 3, 352, 352).cuda()
     total_time = 0
-    i=0
+    i = 0
     torch.cuda.synchronize()
     start = time.time()
-    out,_ = ras(input_tensor)
+    out, _ = ras(input_tensor)
     torch.cuda.synchronize()
     end = time.time()
     single_fps = 1 / (end - start)
     total_time += end - start
     fps = (i + 1) / total_time
-    print(' ({:.2f} fps total_time:{:.2f} single_fps:{})'.format(fps, total_time,single_fps))
-
-
-
-
+    print(' ({:.2f} fps total_time:{:.2f} single_fps:{})'.format(fps, total_time, single_fps))
 
     print(out[0].size())
     print(out[1].size())
     macs, params = profile(ras, inputs=(input_tensor,), verbose=False)
     macs, params = clever_format([macs, params], "%.3f")
     print(macs, params)
-

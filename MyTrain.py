@@ -1,6 +1,7 @@
 import torch
+
 torch.cuda.current_device()
-torch.cuda._initialized=True
+torch.cuda._initialized = True
 from torch.autograd import Variable
 import os
 import argparse
@@ -25,11 +26,13 @@ def structure_loss(pred, mask):
     wiou = 1 - (inter + 1) / (union - inter + 1)
     return (wbce + wiou).mean()
 
+
 def LCE_loss(pred1, pred2, mask):
     loss1 = structure_loss(pred1, mask)
     loss2 = structure_loss(pred2, mask)
     loss = loss1 + loss2
     return loss
+
 
 def train(train_loader, model, optimizer, epoch):
     model.train()
@@ -66,7 +69,8 @@ def train(train_loader, model, optimizer, epoch):
         if i % 20 == 0 or i == total_step:
             file_name = 'lr_{}_train_results.txt'.format('1e-4')
             file = open(file_name, "a")
-            test_result = '{} Epoch [{:03d}/{:03d}], Step [{:04d}/{:04d}], [lateral-3: {:.4f}]'.format(datetime.now(),epoch,opt.epoch, i,total_step,loss_record3.show())
+            test_result = '{} Epoch [{:03d}/{:03d}], Step [{:04d}/{:04d}], [lateral-3: {:.4f}]'.format(datetime.now(), epoch, opt.epoch, i,
+                                                                                                       total_step, loss_record3.show())
             file.write(test_result + '\n')
             print(test_result)
 
@@ -78,9 +82,11 @@ def train(train_loader, model, optimizer, epoch):
 
               }
     file.write(str(visual) + '\n\n')
-    if (epoch+1)  % 5 == 0:
+    if (epoch + 1) % 5 == 0:
         torch.save(model.state_dict(), save_path + 'C2FNet-%d.pth' % epoch)
         print('[Saving Snapshot:]', save_path + 'C2FNet-%d.pth' % epoch)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epoch', type=int,
