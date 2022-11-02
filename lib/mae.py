@@ -273,7 +273,7 @@ class RelativePositionBias(nn.Module):
         return relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
 
 
-@BACKBONES.register_module()
+# @BACKBONES.register_module()
 class MAE(nn.Module):
     """ Vision Transformer with support for patch or hybrid CNN input stage
     """
@@ -413,8 +413,11 @@ class MAE(nn.Module):
         batch_size, seq_len, _ = x.size()
 
         cls_tokens = self.cls_token.expand(batch_size, -1, -1)
+        # print(cls_tokens.size())
         x = torch.cat((cls_tokens, x), dim=1)
+        # print(x.size())
         if self.pos_embed is not None:
+            # print(self.pos_embed.size())
             x = x + self.pos_embed
         x = self.pos_drop(x)
 
