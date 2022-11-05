@@ -84,8 +84,8 @@ def train(train_loader, model, optimizer, epoch):
               }
     file.write(str(visual) + '\n\n')
     if (epoch + 1) % 5 == 0:
-        torch.save(model.state_dict(), save_path + 'C2FNet-%d.pth' % epoch)
-        print('[Saving Snapshot:]', save_path + 'C2FNet-%d.pth' % epoch)
+        torch.save(model.state_dict(), save_path + 'ViT-%d.pth' % epoch)
+        print('[Saving Snapshot:]', save_path + 'ViT-%d.pth' % epoch)
 
 
 if __name__ == '__main__':

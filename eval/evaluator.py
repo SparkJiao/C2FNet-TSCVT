@@ -4,6 +4,7 @@ import time
 import numpy as np
 import torch
 from torchvision import transforms
+from tqdm import tqdm
 
 
 class Eval_thread():
@@ -24,11 +25,11 @@ class Eval_thread():
 
         max_f = mean_f = adap_f = max_e = mean_e = adap_e = avg_p = auc = 0.0
 
-        if self.all_metrics:            
+        if self.all_metrics:
             auc, TPR, FPR = self.Eval_auc()
             TPR = TPR.cpu().numpy()
             FPR = FPR.cpu().numpy()
-            
+
             Res['AUC'] = auc
             Res['TPR'] = TPR
             Res['FPR'] = FPR
@@ -48,7 +49,7 @@ class Eval_thread():
         Res['Prec'] = prec
         Res['Recall'] = recall
         Res['Fm'] = Fm
-            
+
         Em, adap_Em = self.Eval_Emeasure()
         max_e = Em.max().item()
         mean_e = Em.mean().item()
@@ -81,7 +82,7 @@ class Eval_thread():
         avg_mae, img_num = 0.0, 0.0
         with torch.no_grad():
             trans = transforms.Compose([transforms.ToTensor()])
-            for pred, gt in self.loader:
+            for pred, gt in tqdm(self.loader, total=len(self.loader), desc='evaluating mae'):
                 if self.cuda:
                     pred = trans(pred).cuda()
                     gt = trans(gt).cuda()
@@ -103,7 +104,7 @@ class Eval_thread():
 
         with torch.no_grad():
             trans = transforms.Compose([transforms.ToTensor()])
-            for pred, gt in self.loader:
+            for pred, gt in tqdm(self.loader, total=len(self.loader), desc="evaluating f-measure"):
                 if self.cuda:
                     pred = trans(pred).cuda()
                     gt = trans(gt).cuda()
@@ -119,7 +120,7 @@ class Eval_thread():
                 f_score[f_score != f_score] = 0  # for Nan
                 adap_f_score = (1 + beta2) * adap_prec * adap_recall / (beta2 * adap_prec + adap_recall)
                 if adap_f_score != adap_f_score:
-                    adap_f_score= 0
+                    adap_f_score = 0
                 avg_f += f_score
                 ave_adap_f += adap_f_score
                 avg_p += prec
@@ -139,7 +140,7 @@ class Eval_thread():
 
         with torch.no_grad():
             trans = transforms.Compose([transforms.ToTensor()])
-            for pred, gt in self.loader:
+            for pred, gt in tqdm(self.loader, total=len(self.loader), desc='evaluating auc'):
                 if self.cuda:
                     pred = trans(pred).cuda()
                     pred = (pred - torch.min(pred)) / (torch.max(pred) -
@@ -174,7 +175,7 @@ class Eval_thread():
             adap_Em = 0.0
             if self.cuda:
                 Em = Em.cuda()
-            for pred, gt in self.loader:
+            for pred, gt in tqdm(self.loader, total=len(self.loader), desc='evaluating e-measure'):
                 if self.cuda:
                     pred = trans(pred).cuda()
                     pred = (pred - torch.min(pred)) / (torch.max(pred) -
@@ -200,7 +201,7 @@ class Eval_thread():
         alpha, avg_q, img_num = 0.5, 0.0, 0.0
         with torch.no_grad():
             trans = transforms.Compose([transforms.ToTensor()])
-            for pred, gt in self.loader:
+            for pred, gt in tqdm(self.loader, total=len(self.loader), desc='evaluating s-measure'):
                 if self.cuda:
                     pred = trans(pred).cuda()
                     pred = (pred - torch.min(pred)) / (torch.max(pred) -
@@ -267,7 +268,7 @@ class Eval_thread():
         y_temp = (y_pred >= adap_th).float()
         tp = (y_temp * y).sum()
         adap_prec, adap_recall = tp / (y_temp.sum() + 1e-20), tp / (y.sum() +
-                                                                1e-20)
+                                                                    1e-20)
         if self.cuda:
             prec, recall = torch.zeros(num).cuda(), torch.zeros(num).cuda()
             thlist = torch.linspace(0, 1 - 1e-10, num).cuda()
