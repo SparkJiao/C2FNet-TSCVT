@@ -14,6 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--testsize', type=int, default=352, help='testing size')
 parser.add_argument('--pth_path', type=str, default='checkpoints/C2FNet/C2FNet-49.pth')
 parser.add_argument('--mode', type=int, default=0)
+parser.add_argument('--depth', type=int, default=12)
 opt = parser.parse_args()
 
 # for _data_name in ['CAMO','CHAMELEON','COD10K']: #'CAMO','CHAMELEON','COD10K'
@@ -21,7 +22,7 @@ for _data_name in ['NC4K']:
     data_path = 'data/TestDataset/{}'.format(_data_name)
     # save_path = opt.pth_path.replace(".pth", "") + "/"
     save_path = os.path.join(opt.pth_path.replace(".pth", ""), _data_name) + "/"
-    model = mae_vit_segmentor(pretrained=None).cuda()
+    model = mae_vit_segmentor(pretrained=None, depth=opt.depth).cuda()
 
     torch.cuda.set_device(0)
     model.load_state_dict(torch.load(opt.pth_path), strict='False')

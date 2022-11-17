@@ -109,11 +109,12 @@ if __name__ == '__main__':
     parser.add_argument('--train_save', type=str,
                         default='C2FNet')
     parser.add_argument('--pretrained', type=str)
+    parser.add_argument('--depth', type=int, default=12)
     opt = parser.parse_args()
 
     # ---- build models ----
     torch.cuda.set_device(0)  # set your gpu device
-    model = mae_vit_segmentor(opt.pretrained).cuda()
+    model = mae_vit_segmentor(opt.pretrained, depth=opt.depth).cuda()
 
     params = model.parameters()
     # optimizer = AdaXW(params, opt.lr)

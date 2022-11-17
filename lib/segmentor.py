@@ -60,11 +60,24 @@ class Segmentor(nn.Module):
         return x0, x1
 
 
-def mae_vit_segmentor(pretrained, **kwargs):
+def mae_vit_segmentor(pretrained, depth=12, **kwargs):
+    if depth == 12:
+        out_indices = [3, 5, 7, 11]
+    elif depth == 4:
+        out_indices = [0, 1, 2, 3]
+    elif depth == 6:
+        out_indices = [2, 3, 4, 5]
+    elif depth == 8:
+        out_indices = [3, 5, 6, 7]
+    elif depth == 10:
+        out_indices = [3, 5, 7, 9]
+    else:
+        raise NotImplementedError()
+
     backbone = MAE(img_size=352,
                    patch_size=16,
                    embed_dim=768,
-                   depth=12,
+                   depth=depth,
                    num_heads=12,
                    mlp_ratio=4,
                    qkv_bias=True,
@@ -72,7 +85,7 @@ def mae_vit_segmentor(pretrained, **kwargs):
                    use_rel_pos_bias=True,
                    init_values=1.,
                    drop_path_rate=0.1,
-                   out_indices=[3, 5, 7, 11],
+                   out_indices=out_indices,
                    fpn1_norm='batch_norm')  # Single process training.
     decode_head = UPerHead(in_channels=[768, 768, 768, 768],
                            in_index=[0, 1, 2, 3],
